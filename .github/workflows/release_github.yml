@@ -22,11 +22,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
-      matrix: 
+      matrix:
         os: ["ubuntu-latest"]
         python-version: ["3.10", "3.11", "3.12", "3.13"]
     name: Build for ${{ matrix.python-version }}, ${{ matrix.os }}
-    env: 
+    env:
       EIT_PROCESSING_TEST_DATA: ${{ github.workspace }}/../eitprocessing_data/
     steps:
       - uses: actions/checkout@v4
@@ -43,7 +43,6 @@ jobs:
         run: python3 -m pip install --upgrade ".[publishing]"
       - name: Build eitprocessing
         run: python3 -m build
-  
 
   github_release:
     needs: test_python_releases
@@ -127,19 +126,6 @@ jobs:
           git config user.email "actions@github.com"
           git config user.name "GitHub Actions"
           git pull
-
-      - name: Close PR
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "-- searching for associated PR"
-          pr_number=$(gh pr list --head ${{ github.ref_name }} --json number --jq '.[0].number')
-          if [ -n "$pr_number" ]; then
-            echo "-- closing PR #$pr_number"
-            gh pr close $pr_number
-          else
-            echo "-- no open pull request found for branch $branch_name"
-          fi
 
       - name: Merge updates into develop
         run: |
