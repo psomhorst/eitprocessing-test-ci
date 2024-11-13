@@ -58,8 +58,8 @@ jobs:
 
       - name: Set PR base to main and merge
         run: |
-          gr pr edit $pr_number --base main
-          gr pr merge $pr_number --admin
+          gh pr edit $pr_number --base main
+          gh pr merge $pr_number --admin
     
   merge_develop:
     if: ${{ github.ref_name == 'develop'}}
