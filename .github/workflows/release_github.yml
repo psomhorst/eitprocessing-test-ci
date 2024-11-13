@@ -69,15 +69,24 @@ jobs:
     needs: test_python_releases
     runs-on: ubuntu-latest
     steps: 
-      - name: Checkout the code
+      - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Merge develop -> main
-        uses: devmasx/merge-branch@v1.4.0
         with:
-          type: now
-          from_branch: develop
-          target_branch: main
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          ref: main
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+          git pull
+
+      - name: Merge changes into main
+        run: |
+          git switch main
+          git branch ${{ github.ref_name }} origin/${{ github.ref_name }} 
+          git merge ${{ github.ref_name }} --no-ff --no-commit
+          git commit --no-edit
 
   bump_version:
     name: Bump the version
