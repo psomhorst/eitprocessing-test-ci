@@ -24,6 +24,7 @@ permissions:
 
 jobs:
   check_main:
+    name: Check that branch is not main
     runs-on: "ubuntu-latest"
     steps:
       - name: Fail if main branch was selected
@@ -46,9 +47,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-
-  
   merge_pr:
+    name: Merge the PR into main
     if: ${{ github.ref_name != 'develop' }}
     needs: test_python_releases
     runs-on: ubuntu-latest
@@ -64,6 +64,7 @@ jobs:
           gh pr merge ${{ github.ref_name }} --merge --admin
     
   merge_develop:
+    name: Merge develop into main
     if: ${{ github.ref_name == 'develop'}}
     needs: test_python_releases
     runs-on: ubuntu-latest
@@ -79,6 +80,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
   
   github_release:
+    name: Create a draft GitHub release
     needs: [merge_pr, merge_develop]
     if: ${{ always() && (needs.merge_pr.result == 'success' || needs.merge_develop.result == 'success') }}
     runs-on: 'ubuntu-latest'
@@ -138,3 +140,10 @@ jobs:
           from_branch: main
           target_branch: develop
           github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Remove PR branch
+        if: ${{ github.ref_name != 'develop' }}
+        uses: dawidd6/action-delete-branch@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branches: ${{ github.ref_name }}
