@@ -92,7 +92,7 @@ jobs:
         id: bump
         uses: callowayproject/bump-my-version@master
         with:
-          args: ${{ inputs.version_level }}
+          args: ${{ inputs.version_level }} --commit --tag
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Fail if bumping failes
