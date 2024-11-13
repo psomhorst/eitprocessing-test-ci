@@ -53,13 +53,10 @@ jobs:
       - name: Checkout the code
         uses: actions/checkout@v4
 
-      - name: Get PR number
-        run: pr_number=$(gh pr list --head ${{ github.ref_name }} --json number --jq '.[0].number')
-
       - name: Set PR base to main and merge
         run: |
-          gh pr edit $pr_number --base main
-          gh pr merge $pr_number --admin
+          gh pr edit ${{ github.ref_name }} --base main
+          gh pr merge ${{ github.ref_name }} --admin
     
   merge_develop:
     if: ${{ github.ref_name == 'develop'}}
