@@ -16,6 +16,11 @@ on:
 permissions:
   contents: write
   packages: read
+  statuses: read
+  checks: read
+  pull-requests: write
+  actions: read
+  repository-projects: read
 
 jobs:
   check_main:
@@ -53,13 +58,10 @@ jobs:
       - name: Checkout the code
         uses: actions/checkout@v4
 
-      - name: Get PR number
-        run: pr_number=$(gh pr list --head ${{ github.ref_name }} --json number --jq '.[0].number')
-
       - name: Set PR base to main and merge
         run: |
-          gr pr edit $pr_number --base main
-          gr pr merge $pr_number --admin
+          gh pr edit ${{ github.ref_name }} --base main
+          gh pr merge ${{ github.ref_name }} --merge --admin
     
   merge_develop:
     if: ${{ github.ref_name == 'develop'}}
@@ -121,8 +123,8 @@ jobs:
         uses: dieghernan/cff-validator@v3
 
   tidy_workspace:
-    # only run if action above succeeds
     needs: github_release
+    if: ${{ always() && needs.github_release.result == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
