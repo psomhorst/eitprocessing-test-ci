@@ -44,8 +44,7 @@ jobs:
 
   
   merge:
-    if: ${{ github.ref_name != 'develop' }}
-    needs: check_main
+    needs: test_python_releases
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
