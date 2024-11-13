@@ -18,7 +18,9 @@ permissions:
   packages: read
   statuses: read
   checks: read
-  pull-requests: read
+  pull-requests: write
+  actions: read
+  repository-projects: read
 
 jobs:
   check_main:
