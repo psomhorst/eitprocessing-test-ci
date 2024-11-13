@@ -81,6 +81,8 @@ jobs:
     if: ${{ github.ref_name == 'develop'}}
     needs: test_python_releases
     runs-on: ubuntu-latest
+    outputs: 
+      commit_hash: 
     steps: 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -100,6 +102,7 @@ jobs:
           git branch ${{ github.ref_name }} origin/${{ github.ref_name }} 
           git merge ${{ github.ref_name }} --no-ff --no-edit
           git push
+          echo "commit_hash=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
   bump_version:
     name: Bump the version
@@ -111,8 +114,13 @@ jobs:
     steps:
       - name: Checkout the code
         uses: actions/checkout@v4
-        with:
-          ref: main
+
+      - name: Configure git
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+          git pull
+          git switch main
         
       - name: Bump version'
         id: bump
