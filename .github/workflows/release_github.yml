@@ -78,12 +78,14 @@ jobs:
           from_branch: develop
           target_branch: main
           github_token: ${{ secrets.GITHUB_TOKEN }}
-  
-  github_release:
-    name: Create a draft GitHub release
+
+  bump_version:
+    name: Bump the version
     needs: [merge_pr, merge_develop]
     if: ${{ always() && (needs.merge_pr.result == 'success' || needs.merge_develop.result == 'success') }}
     runs-on: 'ubuntu-latest'
+    outputs:
+      new-version: ${{ steps.bump.outputs.current-version }}
     steps:
       - name: Checkout the code
         uses: actions/checkout@v4
@@ -106,13 +108,19 @@ jobs:
         run: |
           echo "Version was bumped from ${{ steps.bump.outputs.previous-version }} to ${{ steps.bump.outputs.current-version }}!"
   
+  github_release:
+    name: Create a draft GitHub release
+    needs: bump_version
+    if: ${{ always() && needs.bump_version.result == 'success' }}
+    runs-on: 'ubuntu-latest'
+    steps:
       - name: Create GitHub Release
         id: create_release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create v${{ steps.bump.outputs.current-version }} \
-              --title="Release v${{ steps.bump.outputs.current-version }}" \
+          gh release create v${{ needs.bump_version.outputs.new-version }} \
+              --title="Release v${{ needs.bump_version.outputs.new-version }}" \
               --generate-notes \
               --draft
 
