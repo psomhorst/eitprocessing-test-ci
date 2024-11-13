@@ -37,7 +37,7 @@ jobs:
     name: "Validate CITATION.cff"
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout the rpo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Validate CITATION.cff
@@ -154,7 +154,7 @@ jobs:
               --draft
 
   tidy_workspace:
-    name: Tidy up the workspace
+    name: Tidy up the repository
     needs: github_release
     if: ${{ always() && needs.github_release.result == 'success' }}
     runs-on: ubuntu-latest
@@ -174,7 +174,6 @@ jobs:
 
       - name: Merge main into develop
         run: |
-          git switch main
           git branch main origin/main
           git merge main --no-ff --no-edit
           git push
