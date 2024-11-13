@@ -98,6 +98,8 @@ jobs:
     steps:
       - name: Checkout the code
         uses: actions/checkout@v4
+        with:
+          ref: main
         
       - name: Bump version'
         id: bump
@@ -125,6 +127,8 @@ jobs:
     steps:
       - name: Checkout the code
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Create GitHub Release
         id: create_release
