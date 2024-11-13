@@ -123,8 +123,8 @@ jobs:
         uses: dieghernan/cff-validator@v3
 
   tidy_workspace:
-    # only run if action above succeeds
     needs: github_release
+    if: ${{ always() && needs.github_release.result == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
