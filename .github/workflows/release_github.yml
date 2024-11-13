@@ -85,8 +85,7 @@ jobs:
         run: |
           git switch main
           git branch ${{ github.ref_name }} origin/${{ github.ref_name }} 
-          git merge ${{ github.ref_name }} --no-ff --no-commit
-          git commit --no-edit
+          git merge ${{ github.ref_name }} --no-ff --no-edit
           git push
 
   bump_version:
@@ -126,7 +125,7 @@ jobs:
     steps:
       - name: Checkout the code
         uses: actions/checkout@v4
-        
+
       - name: Create GitHub Release
         id: create_release
         env:
@@ -144,6 +143,7 @@ jobs:
         uses: dieghernan/cff-validator@v3
 
   tidy_workspace:
+    name: Tidy up the workspace
     needs: github_release
     if: ${{ always() && needs.github_release.result == 'success' }}
     runs-on: ubuntu-latest
