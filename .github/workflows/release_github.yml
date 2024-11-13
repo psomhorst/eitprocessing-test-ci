@@ -33,8 +33,17 @@ jobs:
           echo "Cannot release from main branch, please select valid release branch."
           exit 1
 
+  validate_citation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate CITATION.cff
+        id: validate_cff
+        env:
+          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+        uses: dieghernan/cff-validator@v3
+
   test_python_releases:
-    needs: check_main
+    needs: [check_main, validate_citation]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -139,12 +148,6 @@ jobs:
               --title="Release v${{ needs.bump_version.outputs.new-version }}" \
               --generate-notes \
               --draft
-
-      - name: Validate CITATION.cff
-        id: validate_cff
-        env:
-          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-        uses: dieghernan/cff-validator@v3
 
   tidy_workspace:
     name: Tidy up the workspace
