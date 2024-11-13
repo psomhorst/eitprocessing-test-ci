@@ -87,6 +87,7 @@ jobs:
           git branch ${{ github.ref_name }} origin/${{ github.ref_name }} 
           git merge ${{ github.ref_name }} --no-ff --no-commit
           git commit --no-edit
+          git push
 
   bump_version:
     name: Bump the version
