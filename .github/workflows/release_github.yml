@@ -18,7 +18,17 @@ permissions:
   packages: read
 
 jobs:
+  check_main:
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: Fail if main branch was selected
+        if: ${{ github.ref_name == 'main' }}
+        run: |
+          echo "Cannot release from main branch, please select valid release branch."
+          exit 1
+
   test_python_releases:
+    needs: check_main
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -31,17 +41,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-  check_main:
-    needs: test_python_releases
-    runs-on: "ubuntu-latest"
-    steps:
-      - name: Fail if main branch was selected
-        if: ${{ github.ref_name == 'main' }}
-        run: |
-          echo "Cannot release from main branch, please select valid release branch."
-          exit 1
+
   
-  merge_pr:
+  merge:
     if: ${{ github.ref_name != 'develop' }}
     needs: check_main
     runs-on: ubuntu-latest
@@ -51,31 +53,24 @@ jobs:
       - name: Checkout the code
         uses: actions/checkout@v4
 
-      - name: Get PR number
-        run: pr_number=$(gh pr list --head ${{ github.ref_name }} --json number --jq '.[0].number')
-
       - name: Set PR base to main and merge
+        if: ${{ github.ref_name != 'develop' }}
         run: |
+          pr_number=$(gh pr list --head ${{ github.ref_name }} --json number --jq '.[0].number')
           gr pr edit $pr_number --base main
           gr pr merge $pr_number --admin
-    
-  merge_develop:
-    if: ${{ github.ref_name == 'develop'}}
-    needs: check_main
-    runs-on: ubuntu-latest
-    steps: 
-      - name: Checkout the code
-        uses: actions/checkout@v4
-      - name: Merge main -> develop
+
+      - name: Merge develop -> main
+        if: ${{ github.ref_name == 'develop'}}
         uses: devmasx/merge-branch@master
         with:
           type: now
-          from_branch: main
-          target_branch: develop
+          from_branch: develop
+          target_branch: main
           github_token: ${{ secrets.GITHUB_TOKEN }}
   
   github_release:
-    needs: [merge_pr, merge_develop]
+    needs: merge
     runs-on: 'ubuntu-latest'
     steps:
       - name: Checkout the code
