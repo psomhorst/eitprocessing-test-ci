@@ -16,6 +16,9 @@ on:
 permissions:
   contents: write
   packages: read
+  statuses: read
+  checks: read
+  pull-requests: read
 
 jobs:
   check_main:
