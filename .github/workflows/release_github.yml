@@ -155,15 +155,23 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Merge main -> develop
-        uses: devmasx/merge-branch@v1.4.0
         with:
-          type: now
-          from_branch: main
-          target_branch: develop
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          ref: develop
+          fetch-depth: 0
 
+      - name: Configure git
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+          git pull
+
+      - name: Merge main into develop
+        run: |
+          git switch main
+          git branch main origin/main
+          git merge main --no-ff --no-edit
+          git push
+      
       - name: Remove PR branch
         if: ${{ github.ref_name != 'develop' }}
         uses: dawidd6/action-delete-branch@v3
