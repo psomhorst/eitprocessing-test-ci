@@ -43,7 +43,8 @@ jobs:
 
 
   
-  merge:
+  merge_pr:
+    if: ${{ github.ref_name != 'develop' }}
     needs: test_python_releases
     runs-on: ubuntu-latest
     env:
@@ -52,15 +53,22 @@ jobs:
       - name: Checkout the code
         uses: actions/checkout@v4
 
+      - name: Get PR number
+        run: pr_number=$(gh pr list --head ${{ github.ref_name }} --json number --jq '.[0].number')
+
       - name: Set PR base to main and merge
-        if: ${{ github.ref_name != 'develop' }}
         run: |
-          pr_number=$(gh pr list --head ${{ github.ref_name }} --json number --jq '.[0].number')
           gr pr edit $pr_number --base main
           gr pr merge $pr_number --admin
-
+    
+  merge_develop:
+    if: ${{ github.ref_name == 'develop'}}
+    needs: test_python_releases
+    runs-on: ubuntu-latest
+    steps: 
+      - name: Checkout the code
+        uses: actions/checkout@v4
       - name: Merge develop -> main
-        if: ${{ github.ref_name == 'develop'}}
         uses: devmasx/merge-branch@master
         with:
           type: now
@@ -69,7 +77,8 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
   
   github_release:
-    needs: merge
+    needs: [merge_pr, merge_develop]
+    if: ${{ always() && (needs.merge_pr.result == 'success' || needs.merge_develop.result == 'success') }}
     runs-on: 'ubuntu-latest'
     steps:
       - name: Checkout the code
