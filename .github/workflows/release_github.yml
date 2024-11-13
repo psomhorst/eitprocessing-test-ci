@@ -61,7 +61,7 @@ jobs:
       - name: Set PR base to main and merge
         run: |
           gh pr edit ${{ github.ref_name }} --base main
-          gh pr merge ${{ github.ref_name }} --admin
+          gh pr merge ${{ github.ref_name }} --merge --admin
     
   merge_develop:
     if: ${{ github.ref_name == 'develop'}}
