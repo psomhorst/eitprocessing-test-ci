@@ -34,11 +34,12 @@ jobs:
           exit 1
 
   validate_citation:
+    name: "Validate CITATION.cff"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the rpo
         uses: actions/checkout@v4
-        
+
       - name: Validate CITATION.cff
         id: validate_cff
         env:
