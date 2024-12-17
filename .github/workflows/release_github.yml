@@ -86,8 +86,8 @@ jobs:
       - name: Merge branch into main
         run: |
           git switch main
-          git branch -f develop origin/develop 
-          git merge develop --no-ff --no-edit
+          git branch -f ${{ github.ref_name }} origin/${{ github.ref_name }} 
+          git merge ${{ github.ref_name }} --no-ff --no-edit
     
       - name: Install Python
         uses: actions/setup-python@v5.1.1
