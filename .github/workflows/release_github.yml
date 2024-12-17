@@ -35,7 +35,7 @@ jobs:
       - name: Check if PR base is main
         if: ${{ github.ref_name != 'develop' }}
         run: |
-          if [ $(gh pr view ${{ github.ref_name }} --json baseRefName -q ".baseRefName" != "main") ]; then
+          if [ $(gh pr view ${{ github.ref_name }} --json baseRefName -q ".baseRefName") != "main" ]; then
             echo "Error: PR base is not main."
             exit 1
           fi
