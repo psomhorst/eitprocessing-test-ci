@@ -35,6 +35,10 @@ jobs:
         run: |
           echo "Cannot release from main branch, please select valid release branch."
           exit 1
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Check if PR base is main
         if: ${{ github.ref_name != 'develop' }}
         run: |
