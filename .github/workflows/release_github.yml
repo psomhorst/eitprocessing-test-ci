@@ -40,6 +40,10 @@ jobs:
         if: ${{ github.ref_name != 'develop' }}
         uses: actions/checkout@v4
 
+      - name: Check if PR exists
+        if: ${{ github.ref_name != 'develop' }}
+        run: gh pr view ${{ github.ref_name }}
+
       - name: Check if PR base is main
         if: ${{ github.ref_name != 'develop' }}
         run: |
@@ -47,6 +51,11 @@ jobs:
             echo "Error: PR base is not main."
             exit 1
           fi
+          
+      - name: Check whether PR checks pass(ed)
+        if: ${{ github.ref_name != 'develop' }}
+        run: gh pr checks ${{ github.ref_name }} --watch
+        
       - name: Check if PR is mergeable
         if: ${{ github.ref_name != 'develop' }}
         run: |
