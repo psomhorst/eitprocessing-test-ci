@@ -128,6 +128,10 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: develop
 
+      - name: Checkout main
+        run: |
+          git checkout main
+
       - name: Push changes to GitHub
         uses: ad-m/github-push-action@master
         with:
