@@ -51,7 +51,9 @@ jobs:
           
       - name: Check whether PR checks pass(ed)
         if: ${{ github.ref_name != 'develop' }}
-        run: gh pr checks ${{ github.ref_name }} --watch --json state -q 'if . | length == 0 then "No checks found." elif map(.state == "SUCCESS") | all then "All checks passed" else error("Not all checks passed") end'
+        run: |
+          gh pr checks ${{ github.ref_name }} --watch  # wait for checks to finish
+          gh pr checks ${{ github.ref_name }} --json state -q 'if . | length == 0 then "No checks found." elif map(.state == "SUCCESS") | all then "All checks passed" else error("Not all checks passed") end'
         
       - name: Check if PR is mergeable
         if: ${{ github.ref_name != 'develop' }}
