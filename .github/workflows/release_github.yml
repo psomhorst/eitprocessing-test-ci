@@ -24,6 +24,7 @@ permissions:
 
 env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  GH_PAGER: cat
 
 jobs:
   checks:
@@ -46,20 +47,18 @@ jobs:
 
       - name: Check if PR base is main
         if: ${{ github.ref_name != 'develop' }}
-        run: |
-          if [ $(gh pr view ${{ github.ref_name }} --json baseRefName -q ".baseRefName") != "main" ]; then
-            echo "Error: PR base is not main."
-            exit 1
+        run: gh pr view ${{ github.ref_name }} --json baseRefName -q 'if .baseRefName == "main" then "PR base is main" else error("PR base is not main") end'
           fi
           
       - name: Check whether PR checks pass(ed)
         if: ${{ github.ref_name != 'develop' }}
-        run: GH_PAGER=cat gh pr checks ${{ github.ref_name }} --watch --json state -q 'if . | length == 0 then "No checks found." elif map(.state == "SUCCESS") | all then "All checks passed" else error("Not all checks passed") end'
+        run: gh pr checks ${{ github.ref_name }} --watch --json state -q 'if . | length == 0 then "No checks found." elif map(.state == "SUCCESS") | all then "All checks passed" else error("Not all checks passed") end'
         
       - name: Check if PR is mergeable
         if: ${{ github.ref_name != 'develop' }}
         run: gh pr view ${{ github.ref_name }} --json mergeable -q 'if .mergeable == "MERGEABLE" then "PR is mergeable" else error("PR is not mergeable") end'
         
+
 
 
   test_python_releases:
