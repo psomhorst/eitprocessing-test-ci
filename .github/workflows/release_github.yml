@@ -69,7 +69,7 @@ jobs:
       EIT_PROCESSING_TEST_DATA: ${{ github.workspace }}/../eitprocessing_data/
     steps:
       - name: Skipping tests
-        run: echo "Doing nothing..."
+        run: echo "Doing nothing at all..., sorry folks!"
 
   merge_and_bump: 
     name: Merge the changes into main and bump the version
