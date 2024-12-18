@@ -24,6 +24,7 @@ permissions:
 
 env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  GH_PAGER: cat
 
 jobs:
   checks:
@@ -40,21 +41,25 @@ jobs:
         if: ${{ github.ref_name != 'develop' }}
         uses: actions/checkout@v4
 
+      - name: Check if PR exists
+        if: ${{ github.ref_name != 'develop' }}
+        run: gh pr view ${{ github.ref_name }}
+
       - name: Check if PR base is main
         if: ${{ github.ref_name != 'develop' }}
-        run: |
-          if [ $(gh pr view ${{ github.ref_name }} --json baseRefName -q ".baseRefName") != "main" ]; then
-            echo "Error: PR base is not main."
-            exit 1
-          fi
+        run: gh pr view ${{ github.ref_name }} --json baseRefName -q 'if .baseRefName == "main" then "PR base is main" else error("PR base is not main") end'
+        
       - name: Check if PR is mergeable
         if: ${{ github.ref_name != 'develop' }}
-        run: |
-          if [ $(gh pr view ${{ github.ref_name }} --json mergeable -q ".mergeable") != "MERGEABLE" ]; then 
-            echo "Error: PR is not mergeable."
-            exit 1
-          fi
+        run: gh pr view ${{ github.ref_name }} --json mergeable -q 'if .mergeable == "MERGEABLE" then "PR is mergeable" else error("PR is not mergeable") end'
 
+      - name: Check whether PR checks pass(ed)
+        # note that this assumed there are checks to be passed; this fails if there are no checks, which is no
+        # relevant to this repo
+        if: ${{ github.ref_name != 'develop' }}
+        run: |
+          gh pr checks ${{ github.ref_name }} --watch --fail-fast
+          gh pr checks ${{ github.ref_name }} --json state -q 'if . | length == 0 then "No checks found." elif map(.state == "SUCCESS") | all then "All checks passed" else error("Not all checks passed") end'            
 
   test_python_releases:
     needs: checks
