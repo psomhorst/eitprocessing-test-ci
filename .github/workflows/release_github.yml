@@ -40,6 +40,10 @@ jobs:
         if: ${{ github.ref_name != 'develop' }}
         uses: actions/checkout@v4
 
+      - name: Check if PR exists
+        if: ${{ github.ref_name != 'develop' }}
+        run: gh pr view ${{ github.ref_name }}
+
       - name: Check if PR base is main
         if: ${{ github.ref_name != 'develop' }}
         run: |
@@ -47,13 +51,15 @@ jobs:
             echo "Error: PR base is not main."
             exit 1
           fi
+          
+      - name: Check whether PR checks pass(ed)
+        if: ${{ github.ref_name != 'develop' }}
+        run: GH_PAGER=cat gh pr checks ${{ github.ref_name }} --watch --json state -q 'if . | length == 0 then "No checks found." elif map(.state == "SUCCESS") | all then "All checks passed" else error("Not all checks passed") end'
+        
       - name: Check if PR is mergeable
         if: ${{ github.ref_name != 'develop' }}
-        run: |
-          if [ $(gh pr view ${{ github.ref_name }} --json mergeable -q ".mergeable") != "MERGEABLE" ]; then 
-            echo "Error: PR is not mergeable."
-            exit 1
-          fi
+        run: gh pr view ${{ github.ref_name }} --json mergeable -q 'if .mergeable == "MERGEABLE" then "PR is mergeable" else error("PR is not mergeable") end'
+        
 
 
   test_python_releases:
