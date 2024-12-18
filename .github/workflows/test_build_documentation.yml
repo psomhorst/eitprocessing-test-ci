@@ -29,4 +29,4 @@ jobs:
           python-version: "3.10"
       - name: Build documentation
         run: mkdocs build
-      - run: exit 1
+      - run: sleep 60s
