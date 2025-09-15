@@ -68,42 +68,8 @@ jobs:
           gh pr checks ${{ github.ref_name }} --watch --fail-fast
           gh pr checks ${{ github.ref_name }} --json state -q 'if . | length == 0 then "No checks found." elif map(.state == "SUCCESS") | all then "All checks passed" else error("Not all checks passed") end'
 
-  test_python_releases:
-    needs: checks
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: ["ubuntu-latest"]
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
-    name: Build for ${{ matrix.python-version }}, ${{ matrix.os }}
-    env:
-      EIT_PROCESSING_TEST_DATA: ${{ github.workspace }}/../eitprocessing_data/
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install eitprocessing
-        uses: ./.github/actions/install_eitprocessing
-        with:
-          dependencies: testing
-          extract-data: true
-          python-version: ${{ matrix.python-version }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-          data-directory: ${{ env.EIT_PROCESSING_TEST_DATA }}
-
-      - name: Run pytest
-        run: pytest -v --runslow
-
-      - name: Install additional dependencies for building
-        run: python3 -m pip install --upgrade ".[publishing]"
-
-      - name: Build eitprocessing
-        run: python3 -m build
-
   merge_and_bump:
     name: Merge the changes into main and bump the version
-    needs: test_python_releases
     runs-on: ubuntu-latest
     outputs:
       new-version: ${{ steps.bump.outputs.current-version }}
@@ -123,12 +89,6 @@ jobs:
           git config user.name "GitHub Actions"
           git config -l
 
-      - name: Merge branch into main
-        run: |
-          git switch main
-          git branch -f ${{ github.ref_name }} origin/${{ github.ref_name }}
-          git merge ${{ github.ref_name }} --no-ff --no-edit
-
       - name: Install Python
         uses: actions/setup-python@v5.1.1
         with:
@@ -140,7 +100,58 @@ jobs:
           python3 -m pip install pyproject-deplister
           pyproject-deplister --extra dev --path pyproject.toml | grep bump-my-version | sed 's/ //g' | xargs -I{} python3 -m pip install "{}"
 
-      - name: Pass Inputs to Shell
+      - name: Merge branch into temp branch
+        run: |
+          git checkout -B temp_${{github.ref_name}}_${{github.run_id}} origin/main
+          git branch -f ${{ github.ref_name }} origin/${{ github.ref_name }}
+          git merge ${{ github.ref_name }} --no-ff --no-edit
+
+      - name: Bump version
+        id: temp_bump
+        shell: bash
+        run: |
+          bump-my-version bump ${{ inputs.version_level }} --commit --tag
+          ([[ $? -gt 0 ]] && echo "bumped=false" || echo "bumped=true") >> $GITHUB_OUTPUT
+
+      - name: Fail if bumping failes
+        if: steps.temp_bump.outputs.bumped == 'false'
+        run: |
+          echo "Bumping failed on temp branch."
+          git reset --hard HEAD^
+          exit 1
+
+      - name: Get current main commit hash
+        id: premerge
+        run: |
+          git fetch origin main
+          echo "hash=$(git rev-parse origin/main)" >> $GITHUB_OUTPUT
+
+      - name: Merge PR
+        run: |
+          gh pr merge ${{ github.ref_name }} --merge --delete-branch --squash=false
+
+      - name: Wait for main to update
+        id: waitmain
+        run: |
+          for i in {1..10}; do
+            git fetch origin main
+            NEW_HASH=$(git rev-parse origin/main)
+            if [ "$NEW_HASH" != "${{ steps.premerge.outputs.hash }}" ]; then
+              echo "Main branch updated."
+              exit 0
+            fi
+            echo "Waiting for main branch to update..."
+            sleep 6
+          done
+          echo "Timeout: main branch did not update in time."
+          exit 1
+
+      - name: Checkout main
+        run: |
+          git switch main
+          git pull origin main
+
+      - name: Bump version
         id: bump
         shell: bash
         run: |
@@ -160,6 +171,7 @@ jobs:
         if: steps.bump.outputs.bumped == 'true'
         run: |
           echo "Version was bumped from ${{ steps.bump.outputs.previous-version }} to ${{ steps.bump.outputs.current-version }}!"
+
 
       - name: Merge main into develop
         run: |
