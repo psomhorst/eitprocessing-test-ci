@@ -28,7 +28,7 @@ env:
 
 jobs:
   checks:
-    name: Check requirements
+    name: Check requirements for PR to be merged
     runs-on: ubuntu-latest
     steps:
       - name: Fail if main branch was selected
@@ -69,7 +69,7 @@ jobs:
           gh pr checks ${{ github.ref_name }} --json state -q 'if . | length == 0 then "No checks found." elif map(.state == "SUCCESS") | all then "All checks passed" else error("Not all checks passed") end'
 
   merge_and_bump:
-    name: Merge the changes into main and bump the version
+    name: Check and merge
     needs: checks
     runs-on: ubuntu-latest
     outputs:
@@ -101,18 +101,15 @@ jobs:
           python3 -m pip install pyproject-deplister
           pyproject-deplister --extra dev --path pyproject.toml | grep bump-my-version | sed 's/ //g' | xargs -I{} python3 -m pip install "{}"
 
-      - name: Test merging PR into main, and main into develop
+      - name: Test merging PR into main
         run: |
           git fetch origin main
           git checkout -B temp_main_${{github.ref_name}}_${{github.run_id}} origin/main
           git branch -f ${{ github.ref_name }} origin/${{ github.ref_name }}
           git merge ${{ github.ref_name }} --no-ff --no-edit
 
-          git fetch origin develop
-          git checkout -B temp_develop_${{github.ref_name}}_${{github.run_id}} origin/develop
-          git merge temp_main_${{github.ref_name}}_${{github.run_id}}
 
-      - name: Bump version
+      - name: Test bumping version
         id: temp_bump
         shell: bash
         run: |
@@ -130,7 +127,12 @@ jobs:
         if: steps.temp_bump.outputs.bumped == 'true'
         run: |
           echo "Version would be bumped to $(bump-my-version show current_version)!"
-          git reset --hard HEAD^
+
+      - name: Test merging into develop
+        run: |
+          git fetch origin develop
+          git checkout -B temp_develop_${{github.ref_name}}_${{github.run_id}} origin/develop
+          git merge temp_main_${{github.ref_name}}_${{github.run_id}}
 
       - name: Get current main commit hash
         id: premerge
